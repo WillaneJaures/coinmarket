@@ -1,0 +1,110 @@
+version: "3"
+
+services:
+
+  # MySQL
+  nanp-mysql:
+    image: mysql:8.0
+    container_name: nanp-mysql
+    hostname: nanp-mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=mysql
+      - MYSQL_USER=nanp
+      - MYSQL_PASSWORD=nanp
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - share_data:/partage
+    ports:
+      - "8889:3306"
+    networks:
+      - bigdata
+    restart: always
+
+  # MongoDB
+  mongo:
+    image: mongo:latest
+    container_name: mongo
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=rootpassword
+    volumes:
+      - mongo_data:/data/db
+    ports:
+      - "27017:27017"
+    networks:
+      - bigdata
+    restart: always
+
+  # HDFS NameNode
+  hadoop-hdfs-namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    container_name: hadoop-hdfs-namenode
+    environment:
+      - CLUSTER_NAME=hadoop-cluster
+      - CORE_CONF_fs_defaultFS=hdfs://hadoop-hdfs-namenode:8020
+
+    volumes:
+      - hadoop_namenode_data:/hadoop/dfs/name
+    ports:
+      - "50070:50070"
+    networks:
+      - bigdata
+    restart: always
+
+  # HDFS DataNode
+  hadoop-hdfs-datanode:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: hadoop-hdfs-datanode
+    depends_on:
+      - hadoop-hdfs-namenode
+    environment:
+      - CLUSTER_NAME=hadoop-cluster
+      - CORE_CONF_fs_defaultFS=hdfs://hadoop-hdfs-namenode:8020
+
+    volumes:
+      - hadoop_datanode_data:/hadoop/dfs/data
+    networks:
+      - bigdata
+    restart: always
+
+  # Hive Metastore (using valid image from BDE2020)
+  hive-metastore:
+    image: bde2020/hive:2.3.2-postgresql-metastore
+    container_name: hive-metastore
+    environment:
+      - HIVE_METASTORE_DB_TYPE=postgres
+      - HIVE_METASTORE_URI=thrift://hive-metastore:9083
+      - SERVICE=metastore
+    ports:
+      - "9083:9083"
+    networks:
+      - bigdata
+    depends_on:
+      - nanp-mysql
+    restart: always
+
+  # Hive Server 2
+  hive-server2:
+    image: bde2020/hive:2.3.2-postgresql-metastore
+    container_name: hive-server2
+    environment:
+      - HIVE_METASTORE_URI=thrift://hive-metastore:9083
+      - SERVICE=hiveserver2
+    ports:
+      - "10000:10000"
+    depends_on:
+      - hive-metastore
+    networks:
+      - bigdata
+    restart: always
+
+volumes:
+  mysql_data:
+  mongo_data:
+  hadoop_namenode_data:
+  hadoop_datanode_data:
+  share_data:
+
+networks:
+  bigdata:
+    driver: bridge
