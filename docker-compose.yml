@@ -13,6 +13,7 @@ services:
       - MYSQL_PASSWORD=nanp
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
       - share_data:/partage
     ports:
       - "8889:3306"

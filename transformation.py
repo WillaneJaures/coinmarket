@@ -5,12 +5,12 @@ from pyspark.sql.functions import col, when, lit, regexp_replace,split,trim, ele
 
 spark = SparkSession.builder \
     .appName("MyApp") \
-    .config("spark.jars", "/home/sabou/Documents/extracted/usr/share/java/mysql-connector-java-9.3.0.jar") \
+    .config("spark.jars", "/home/sabouwill/Documents/mysql-connector-extracted/usr/share/java/mysql-connector-java-9.3.0.jar") \
     .getOrCreate()
 
 
 #read the csv file
-df = spark.read.csv("/home/sabou/Documents/project1/coinmarket.csv", header=True, inferSchema=True)
+df = spark.read.csv("/home/sabouwill/Downloads/coinmarket/coinmarket.csv", header=True, inferSchema=True)
 
 #display the schema
 df.show(5)
@@ -64,7 +64,7 @@ df_final.show(10)
 
 df_final.write \
     .format("jdbc") \
-    .option("url", "jdbc:mysql://localhost:3306/coinmarket") \
+    .option("url", "jdbc:mysql://localhost:8889/coinmarketdb") \
     .option("driver", "com.mysql.cj.jdbc.Driver") \
     .option("dbtable", "Product") \
     .option("user", "root") \
@@ -89,7 +89,7 @@ top_area = df_final.groupBy("Area").count().orderBy(desc("count"))
 
 #prix moyen d'une voiture
 avg_price_voiture = df_final.filter(col("Product") == "Voitures").select(round(avg("price"),4).alias("avg_price"))
-avg_price_voiture.show()
+#avg_price_voiture.show()
 
 df_final.filter(col("Product") == "Voitures").select("Name","price").orderBy(desc("price")).show(20) 
 
